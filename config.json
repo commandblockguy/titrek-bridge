@@ -1,0 +1,8 @@
+{
+	"server": "remote.titrek.us",
+	"port":   51701,
+	"debug":  true,
+	"mode": "serial",
+	"pipe_in": "/tmp/cemu-fromcalc",
+	"pipe_out": "/tmp/cemu-tocalc"
+}
