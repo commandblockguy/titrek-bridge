@@ -31,6 +31,10 @@ pipe_mode = False
 if "mode" in config:
 	if config["mode"] == "pipe":
 		pipe_mode = True
+	elif config["mode"] == "CEmu":
+		pipe_mode = True
+	elif config["mode"] == "cemu":
+		pipe_mode = True
 	elif config["mode"] == "serial":
 		pipe_mode = False
 	else:
