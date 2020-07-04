@@ -79,6 +79,7 @@ if pipe_mode:
 		print("Pipes opened")
 
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 s.connect((server, tcp_port))
 
 print("Connected.")
