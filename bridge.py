@@ -1,6 +1,11 @@
 #!/usr/bin/env python3
 
-import socket, json, serial, serial.tools.list_ports, threading, sys
+import socket, json, threading, sys
+try:
+    import serial, serial.tools.list_ports
+except ImportError:
+    print("Dependency not found: please run 'pip3 install pyserial'")
+    exit(1)
 
 ce_id = (0x0451, 0xe008)
 max_packet_size = 1024
