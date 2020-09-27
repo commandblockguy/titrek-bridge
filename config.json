@@ -1,5 +1,4 @@
 {
-	"server": "remote.titrek.us",
 	"port":   51701,
 	"debug":  true,
 	"mode": "serial",

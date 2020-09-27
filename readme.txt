@@ -11,8 +11,6 @@
 2) Configuration
   To configure this project, open the file `config.json` with your favorite flavor of text editor.
   You will need to edit the config options:
-    server    The IP address or hostname of the server you want to connect to.
-              For my test server, this is play.titrek.us.
     port      The port number of the remote host.
               For my test server, this is 51701.
     debug     Whether or not to display socket/serial status, and packet relay to console

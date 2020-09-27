@@ -10,26 +10,80 @@ except ImportError:
 ce_id = (0x0451, 0xe008)
 max_packet_size = 1024
 
-def ser_recv(ser, s, debug):
+def sock_recv(s, ser_out):
+	while connected:
+		try:
+			data = s.recv(max_packet_size)
+			if data:
+				if debug_mode:
+					print("S->C: Type {:>3}, size {}".format(data[0], len(data)))
+				status1 = ser_out.write(len(data).to_bytes(3, byteorder='little'))
+				status2 = ser_out.write(data)
+				if debug_mode:
+					print("S->C completed: ", (status1, status2))
+
+		except socket.error as e:
+			sys.stderr.write('Error: {}\n'.format(e))
+	s.close()
+	print("Disconnected.")
+
+def connect(server):
+	global s, connected
+	try:
+		s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+		s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+		s.connect((server, tcp_port))
+		
+		print("Connected to", server)
+		connected = True
+		sock_thread = threading.Thread(target=sock_recv, args=(s, ser_out), daemon=True)
+		sock_thread.start()
+	except Exception as e:
+		sys.stderr.write('Error: {}\n'.format(e))
+
+def ser_recv(ser_in, ser_out):
+	global s, connected
 	print("Serial listening.")
 	while True:
-		size = int.from_bytes(ser.read(3), 'little')
-		if size > 1024:
+		size = int.from_bytes(ser_in.read(3), 'little')
+		if size > max_packet_size:
 			sys.stderr.write('Error: Got {} bytes from client, but the max packet size is {}\n'.format(size, max_packet_size))
 			# todo: we should stop something, as this will 100% cause a desync
 		else:
-			data = ser.read(size)
+			data = ser_in.read(size)
+			packet_type = data[0]
 			if debug_mode:
-				print("C->S: Type {:>3}, size {}".format(data[0], size))
-			status = s.send(data)
-			if debug_mode:
-				print("C->S completed: ", status)
+				print("C->S: Type {:>3}, size {}".format(packet_type, size))
+			if packet_type == 0:
+				# Connect
+				if debug_mode: print("Got connect packet")
+				server = str(data[1:-1], 'utf-8')
+				connect(server)
+				if connected:
+					ser_out.write(b'\x01\x00\x00\x00')
+					if debug_mode: print("B->C: Type   0, size 1")
+				else:
+					ser_out.write(b'\x01\x00\x00\xF0')
+					if debug_mode: print("B->C: Type 253, size 1")
+			elif packet_type == 1:
+				# Disconnect
+				if debug_mode: print("Got disconnect packet")
+				connected = False
+				ser_out.write(b'\x01\x00\x00\x01')
+				if debug_mode: print("B->C: Type   1, size 1")
+			else:
+				# Not for us
+				if connected:
+					status = s.send(data)
+					if debug_mode:
+						print("C->S completed: ", status)
+				else:
+					sys.stderr.write('Error: Tried to send a packet without being connected to a server\n')
 
 f = open("config.json","r")
 config = json.load(f)
 f.close()
 
-server = config["server"]
 tcp_port = config["port"]
 
 pipe_mode = False
@@ -83,33 +137,12 @@ if pipe_mode:
 	if debug_mode:
 		print("Pipes opened")
 
-s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-s.connect((server, tcp_port))
-
-print("Connected.")
-
-ser_thread = threading.Thread(target=ser_recv, args=(ser_in, s, debug_mode), daemon=True)
-ser_thread.start()
-
 print("^C to exit.")
 
+connected = False
+
 try:
-	while True:
-		try:
-			data = s.recv(max_packet_size)
-			if data:
-				if debug_mode:
-					print("S->C: Type {:>3}, size {}".format(data[0], len(data)))
-				status1 = ser_out.write(len(data).to_bytes(3, byteorder='little'))
-				status2 = ser_out.write(data)
-				if debug_mode:
-					print("S->C completed: ", (status1, status2))
-
-		except socket.error as e:
-			sys.stderr.write('Error: {}\n'.format(e))
-
-
+	ser_recv(ser_in, ser_out)
 except KeyboardInterrupt:
 	pass
 
