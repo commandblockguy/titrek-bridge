@@ -11,6 +11,7 @@ ce_id = (0x0451, 0xe008)
 max_packet_size = 1024
 
 def sock_recv(s, ser_out):
+	global connected
 	while connected:
 		try:
 			data = s.recv(max_packet_size)
@@ -21,6 +22,8 @@ def sock_recv(s, ser_out):
 				status2 = ser_out.write(data)
 				if debug_mode:
 					print("S->C completed: ", (status1, status2))
+			else:
+				connected = False
 
 		except socket.error as e:
 			sys.stderr.write('Error: {}\n'.format(e))
@@ -69,6 +72,7 @@ def ser_recv(ser_in, ser_out):
 				# Disconnect
 				if debug_mode: print("Got disconnect packet")
 				connected = False
+				s.shutdown(socket.SHUT_RDWR)
 				ser_out.write(b'\x01\x00\x00\x01')
 				if debug_mode: print("B->C: Type   1, size 1")
 			else:
