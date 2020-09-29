@@ -37,7 +37,7 @@ def connect(server):
 		s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 		s.connect((server, tcp_port))
 		
-		print("Connected to", server)
+		print(f"Connected to {server} on port {tcp_port}")
 		connected = True
 		sock_thread = threading.Thread(target=sock_recv, args=(s, ser_out), daemon=True)
 		sock_thread.start()
@@ -61,6 +61,9 @@ def ser_recv(ser_in, ser_out):
 				# Connect
 				if debug_mode: print("Got connect packet")
 				server = str(data[1:-1], 'utf-8')
+				hostinfo = server.split(":", maxsplit=1)
+				if not hostinfo[0]==server:
+					tcp_port=int(hostinfo[1])
 				connect(server)
 				if connected:
 					ser_out.write(b'\x01\x00\x00\x00')
