@@ -30,14 +30,25 @@ def sock_recv(s, ser_out):
 	s.close()
 	print("Disconnected.")
 
-def connect(server):
+def connect(server, custom_port):
 	global s, connected
 	try:
 		s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 		s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-		s.connect((server, tcp_port))
-		
-		print(f"Connected to {server} on port {tcp_port}")
+		s.settimeout(15)
+		try:
+			if custom_port:
+				print(f"Connecting to {server} on port {custom_port}...")
+				s.connect((server, custom_port))
+			else:
+				print(f"Connecting to {server} on port {tcp_port}...")
+				s.connect((server, tcp_port))
+		except socket.timeout:
+			print("Socket timeout")
+			return
+
+		print("Connected!")
+		s.settimeout(None)
 		connected = True
 		sock_thread = threading.Thread(target=sock_recv, args=(s, ser_out), daemon=True)
 		sock_thread.start()
@@ -62,9 +73,10 @@ def ser_recv(ser_in, ser_out):
 				if debug_mode: print("Got connect packet")
 				server = str(data[1:-1], 'utf-8')
 				hostinfo = server.split(":", maxsplit=1)
-				if not hostinfo[0]==server:
-					tcp_port=int(hostinfo[1])
-				connect(server)
+				custom_port=0
+				if not (hostinfo[0]==server):
+					custom_port=int(hostinfo[1])
+				connect(hostinfo[0], custom_port)
 				if connected:
 					ser_out.write(b'\x01\x00\x00\x00')
 					if debug_mode: print("B->C: Type   0, size 1")
