@@ -33,16 +33,17 @@ def sock_recv(s, ser_out):
 def connect(server, custom_port):
 	global s, connected
 	try:
+		port = tcp_port
+		if custom_port:
+			port = custom_port
 		s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 		s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 		s.settimeout(15)
 		try:
-			if custom_port:
-				print(f"Connecting to {server} on port {custom_port}...")
-				s.connect((server, custom_port))
-			else:
-				print(f"Connecting to {server} on port {tcp_port}...")
-				s.connect((server, tcp_port))
+			print(f"Connecting to {server} on port {port}...")
+			if use_ssl:
+				print(f"We should be using SSL")
+			s.connect((server, port))
 		except socket.timeout:
 			print("Socket timeout")
 			return
@@ -56,7 +57,7 @@ def connect(server, custom_port):
 		sys.stderr.write('Error: {}\n'.format(e))
 
 def ser_recv(ser_in, ser_out):
-	global s, connected
+	global s, connected, use_ssl
 	print("Serial listening.")
 	while True:
 		size = int.from_bytes(ser_in.read(3), 'little')
@@ -70,11 +71,15 @@ def ser_recv(ser_in, ser_out):
 				print("C->S: Type {:>3}, size {}".format(packet_type, size))
 			if packet_type == 0:
 				# Connect
+				use_ssl = False
+				server = str(data[2:-1], 'utf-8')
 				if debug_mode: print("Got connect packet")
-				server = str(data[1:-1], 'utf-8')
-				hostinfo = server.split(":", maxsplit=1)
+				hostinfo = server.split(":", maxsplit=2)
+				if hostinfo[0] == "s":
+					use_ssl = True
+					del hostinfo[0]
 				custom_port=0
-				if not (hostinfo[0]==server):
+				if len(hostinfo) > 1:
 					custom_port=int(hostinfo[1])
 				connect(hostinfo[0], custom_port)
 				if connected:
@@ -104,6 +109,7 @@ config = json.load(f)
 f.close()
 
 tcp_port = config["port"]
+use_ssl = False
 
 pipe_mode = False
 if "mode" in config:
