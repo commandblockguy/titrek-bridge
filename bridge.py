@@ -29,6 +29,7 @@ def sock_recv(s, ser_out):
 			sys.stderr.write('Error: {}\n'.format(e))
 	s.close()
 	print("Disconnected.")
+	ser_out.write(b'\x01\x00\x00\x01')
 
 def connect(server, custom_port):
 	global s, connected
@@ -72,6 +73,8 @@ def ser_recv(ser_in, ser_out):
 			if packet_type == 0:
 				# Connect
 				use_ssl = False
+				if data[1] == 1:
+					use_ssl = True
 				server = str(data[2:-1], 'utf-8')
 				if debug_mode: print("Got connect packet")
 				hostinfo = server.split(":", maxsplit=2)
@@ -110,6 +113,7 @@ f.close()
 
 tcp_port = config["port"]
 use_ssl = False
+prefer_ssl = False
 
 pipe_mode = False
 if "mode" in config:
