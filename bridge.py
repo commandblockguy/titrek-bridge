@@ -8,7 +8,7 @@ except ImportError:
     exit(1)
 
 ce_id = (0x0451, 0xe008)
-max_packet_size = 1024
+max_packet_size = 4096
 
 def sock_recv(s, ser_out):
 	global connected
@@ -72,19 +72,15 @@ def ser_recv(ser_in, ser_out):
 				print("C->S: Type {:>3}, size {}".format(packet_type, size))
 			if packet_type == 0:
 				# Connect
-				use_ssl = False
-				if data[1] == 1:
-					use_ssl = True
-				server = str(data[2:-1], 'utf-8')
+				hostinfo = str(data[1:-1], 'utf-8').split(":", maxsplit=2)
 				if debug_mode: print("Got connect packet")
-				hostinfo = server.split(":", maxsplit=2)
-				if hostinfo[0] == "s":
-					use_ssl = True
-					del hostinfo[0]
-				custom_port=0
+				server=hostinfo[0]
+				custom_port=tcp_port
+				if len(hostinfo)>1:
+					custom_port=int(hostinfo[1])				
 				if len(hostinfo) > 1:
 					custom_port=int(hostinfo[1])
-				connect(hostinfo[0], custom_port)
+				connect(server, custom_port)
 				if connected:
 					ser_out.write(b'\x01\x00\x00\x00')
 					if debug_mode: print("B->C: Type   0, size 1")
@@ -143,10 +139,18 @@ if serial_mode:
 	else:
 		ports = [x for x in serial.tools.list_ports.comports() if (x.vid, x.pid) == ce_id]
 		if len(ports) == 0:
-			print("No device detected.")
-			exit(1)
-
-		serial_name = ports[0].device
+			ports_manual=serial.tools.list_ports.comports()
+			ct=0
+			for p in ports_manual:
+				print(f"{ct} {p}")
+				ct+=1
+			print(f"{ct} device not listed")
+			sel=input("Select Device: ")
+			if int(sel)==len(ports_manual):
+				exit(1)
+			else:
+				serial_name=ports_manual[int(sel)].device
+		else: serial_name = ports[0].device
 
 		if len(ports) > 1:
 			print("Multiple devices detected - using {}".format(serial_name))
