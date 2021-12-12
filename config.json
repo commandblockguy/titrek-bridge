@@ -1,7 +1,7 @@
 {
 	"port":   51701,
 	"debug":  true,
-	"mode": "serial",
+	"mode": "cemu",
 	"pipe_in": "/tmp/cemu-fromcalc",
 	"pipe_out": "/tmp/cemu-tocalc"
 }
