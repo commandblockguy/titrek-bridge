@@ -10,20 +10,19 @@ except ImportError:
 ce_id = (0x0451, 0xe008)
 max_packet_size = 4096
 
+def u24(*args):
+	o=[]
+	for arg in args:
+		if int(arg)<0: arg = abs(int(arg))
+		else: arg = int(arg)
+		o.extend(list(int(arg).to_bytes(3,'little')))
+	return o
+
 def sock_recv(s, ser_out):
 	global connected
 	while connected:
 		try:
-			data = s.recv(max_packet_size)
-			if data:
-				if debug_mode:
-					print("S->C: Type {:>3}, size {}".format(data[0], len(data)))
-				status1 = ser_out.write(len(data).to_bytes(3, byteorder='little'))
-				status2 = ser_out.write(data)
-				if debug_mode:
-					print("S->C completed: ", (status1, status2))
-			else:
-				connected = False
+			status = ser_out.write(s.recv(max_packet_size))
 
 		except socket.error as e:
 			sys.stderr.write('Error: {}\n'.format(e))
@@ -97,7 +96,7 @@ def ser_recv(ser_in, ser_out):
 			else:
 				# Not for us
 				if connected:
-					status = s.send(data)
+					status = s.send(u24(len(data)) + data)
 					if debug_mode:
 						print("C->S completed: ", status)
 				else:
