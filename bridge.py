@@ -190,4 +190,7 @@ if serial_mode:
 if pipe_mode:
 	ser_in.close()
 	ser_out.close()
-s.close()
+try: 
+	s.close()
+except: pass
+	
