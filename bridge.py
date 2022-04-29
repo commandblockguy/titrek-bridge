@@ -66,41 +66,43 @@ def ser_recv(ser_in, ser_out):
 			# todo: we should stop something, as this will 100% cause a desync
 		else:
 			data = ser_in.read(size)
-			packet_type = data[0]
-			if debug_mode:
-				print("C->S: Type {:>3}, size {}".format(packet_type, size))
-			if packet_type == 0:
-				# Connect
-				hostinfo = str(data[1:-1], 'utf-8').split(":", maxsplit=2)
-				if debug_mode: print("Got connect packet")
-				server=hostinfo[0]
-				custom_port=tcp_port
-				if len(hostinfo)>1:
-					custom_port=int(hostinfo[1])				
-				if len(hostinfo) > 1:
-					custom_port=int(hostinfo[1])
-				connect(server, custom_port)
-				if connected:
-					ser_out.write(b'\x01\x00\x00\x00')
-					if debug_mode: print("B->C: Type   0, size 1")
+			if len(data) > 0:
+				packet_type = data[0]
+				if debug_mode:
+					print("C->S: Type {:>3}, size {}".format(packet_type, size))
+				if packet_type == 0:
+					# Connect
+					hostinfo = str(data[1:-1], 'utf-8').split(":", maxsplit=2)
+					if debug_mode: print("Got connect packet")
+					server=hostinfo[0]
+					custom_port=tcp_port
+					if len(hostinfo)>1:
+						custom_port=int(hostinfo[1])
+					if len(hostinfo) > 1:
+						custom_port=int(hostinfo[1])
+					connect(server, custom_port)
+					if connected:
+						ser_out.write(b'\x01\x00\x00\x00')
+						if debug_mode: print("B->C: Type   0, size 1")
+					else:
+						ser_out.write(b'\x01\x00\x00\xF0')
+						if debug_mode: print("B->C: Type 253, size 1")
+				elif packet_type == 1:
+					# Disconnect
+					if debug_mode: print("Got disconnect packet")
+					connected = False
+					s.shutdown(socket.SHUT_RDWR)
+					ser_out.write(b'\x01\x00\x00\x01')
+					if debug_mode: print("B->C: Type   1, size 1")
+					break
 				else:
-					ser_out.write(b'\x01\x00\x00\xF0')
-					if debug_mode: print("B->C: Type 253, size 1")
-			elif packet_type == 1:
-				# Disconnect
-				if debug_mode: print("Got disconnect packet")
-				connected = False
-				s.shutdown(socket.SHUT_RDWR)
-				ser_out.write(b'\x01\x00\x00\x01')
-				if debug_mode: print("B->C: Type   1, size 1")
-			else:
-				# Not for us
-				if connected:
-					status = s.send(bytes(u24(size)) + data)
-					if debug_mode:
-						print("C->S completed: ", status)
-				else:
-					sys.stderr.write('Error: Tried to send a packet without being connected to a server\n')
+					# Not for us
+					if connected:
+						status = s.send(bytes(u24(size)) + data)
+						if debug_mode:
+							print("C->S completed: ", status)
+					else:
+						sys.stderr.write('Error: Tried to send a packet without being connected to a server\n')
 
 f = open("config.json","r")
 config = json.load(f)
