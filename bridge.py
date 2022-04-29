@@ -96,7 +96,7 @@ def ser_recv(ser_in, ser_out):
 			else:
 				# Not for us
 				if connected:
-					status = s.send(bytes(u24(len(data))) + data)
+					status = s.send(size + data)
 					if debug_mode:
 						print("C->S completed: ", status)
 				else:
