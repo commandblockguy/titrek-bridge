@@ -102,8 +102,9 @@ def ser_recv(ser_in, ser_out):
 							if debug_mode: print("C->S completed: ", status)
 						else:
 							sys.stderr.write('Error: Tried to send a packet without being connected to a server\n')
-	except (serial.SerialException, OSError): 
+	except (serial.SerialException, OSError, IOError): 
 		sys.stderr.write('Serial device appears disabled. Disconnecting from remote host\n')
+		connected = False
 		try:
 			s.close()
 		except NameError: pass
