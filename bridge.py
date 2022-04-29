@@ -102,7 +102,9 @@ def ser_recv(ser_in, ser_out):
 							sys.stderr.write('Error: Tried to send a packet without being connected to a server\n')
 	except (serial.SerialException, OSError): 
 		sys.stderr.write('Serial device appears disabled. Disconnecting from remote host')
-		s.close()
+		try:
+			s.close()
+		except NameError: pass
 		return
 
 f = open("config.json","r")
