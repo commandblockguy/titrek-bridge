@@ -89,7 +89,9 @@ def ser_recv(ser_in, ser_out):
 						# Disconnect
 						if debug_mode: print("Got disconnect packet")
 						connected = False
-						s.close()
+						try:
+							s.close()
+						except: pass
 						ser_out.write(b'\x01\x00\x00\x01')
 						if debug_mode: print("B->C: Type   1, size 1")
 						return
@@ -101,7 +103,7 @@ def ser_recv(ser_in, ser_out):
 						else:
 							sys.stderr.write('Error: Tried to send a packet without being connected to a server\n')
 	except (serial.SerialException, OSError): 
-		sys.stderr.write('Serial device appears disabled. Disconnecting from remote host')
+		sys.stderr.write('Serial device appears disabled. Disconnecting from remote host\n')
 		try:
 			s.close()
 		except NameError: pass
