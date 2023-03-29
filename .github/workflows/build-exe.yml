@@ -37,14 +37,6 @@ jobs:
           name: titrek-bridge.exe
           path: titrek-bridge.exe
 
-      - name: Set final commit status
-        uses: myrotvorets/set-commit-status-action@master
-        if: always()
-        with:
-          sha: ${{ steps.comment-branch.outputs.head_sha }}
-          token: ${{ secrets.GITHUB_TOKEN }}
-          status: ${{ job.status }}
-
       - name: Create Development Release
         id: create_release
         uses: actions/create-release@v1.0.0
@@ -64,4 +56,14 @@ jobs:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
           asset_path: titrek-bridge.exe
           asset_name: titrek-bridge.exe
+          asset_content_type: application/octet-stream
+
+      - name: Add bridge.py to Release
+        uses: actions/upload-release-asset@v1.0.1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: bridge.py
+          asset_name: bridge.py
           asset_content_type: application/octet-stream
