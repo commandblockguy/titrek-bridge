@@ -5,5 +5,6 @@ PyInstaller.__main__.run([
     '--onefile',
     '--windowed',
     '--add-data', 'config.json:config.json',
-    '--name', 'titrek-bridge'
+    '--name', 'titrek-bridge',
+    '--distpath', '.'
 ])
